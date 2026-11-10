@@ -1,60 +1,58 @@
 import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseEnumPipe, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { User } from './user.entity.js';
 import { Role } from './enums/role.enum.js';
+import { UsersService } from './users.service.js';
+import { UserSaveDto } from './dto/user.save-dto.js';
+import { UserDto } from './dto/user.dto.js';
+import { UserUpdateDto } from './dto/user.update-dto.js';
 
 
-@Controller("users")
-export class UsersController{
-
+@Controller('users')
+export class UsersController {
+  constructor(private readonly service: UsersService) {}
   //
   @Post()
-  create(@Body() user: User): User {
-    console.log("Saved user: ", user)
-    user.id = 7;
-    return user
+  async create(@Body() saveDto: UserSaveDto): Promise<UserDto> {
+    return await this.service.create(saveDto);
   }
 
   @Get()
-  getAll(): User[] {
-    const user1: User = new User();
-    user1.name = 'Tom';
-    const user2: User = new User();
-    user2.name = "Bob";
-
-    return [user1, user2]
+  async getAll(): Promise<UserDto[]> {
+    return await this.service.getAllActiveUsers();
   }
 
-  @Get(":id")
-  getById(@Param("id", ParseIntPipe) id: number): User {
-    console.log(id)
-    const user: User = new User();
-    user.name = "Mary";
-    return user;
+  @Get(':id')
+  async getById(@Param('id', ParseIntPipe) id: number): Promise<UserDto> {
+    return await this.service.getActiveUserById(id);
   }
 
-  @Patch(":id")
+  @Patch(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  update(@Param("id", ParseIntPipe) id: number, @Body() user: User): void{
-    console.log(id);
-    console.log(user);
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateDto: UserUpdateDto,
+  ): Promise<void> {
+    await this.service.update(id, updateDto);
   }
 
-  @Delete(":id")
+  @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deleteById(@Param("id", ParseIntPipe) id: number): void{
-    console.log(id)
+  async deleteById(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.service.deleteById(id);
   }
 
-  @Patch(":id/set-role/:role")
+  @Patch(':id/restore')
   @HttpCode(HttpStatus.NO_CONTENT)
-  setRole(
-    @Param("id", ParseIntPipe) id: number,
-    @Param ("role", new ParseEnumPipe(Role)) role: Role
-  ): void {
-    console.log(id)
-    console.log(role)
+  async restoreById(@Param("id", ParseIntPipe) id: number): Promise<void> {
+    await this.service.restoreById(id)
   }
 
-
-
+  @Patch(':id/set-role/:role')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async setRole(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('role', new ParseEnumPipe(Role)) role: Role,
+  ): Promise<void> {
+    await this.service.setRole(id, role);
+  }
 }
